@@ -14,7 +14,7 @@ app.use(cors());
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-oq29.onrender.com',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
@@ -39,7 +39,7 @@ app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
   console.log('asd');
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-oq29.onrender.com',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     refreshToken,
