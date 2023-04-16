@@ -23,6 +23,101 @@ app.get('/auth', auth, (request, response) => {
   response.json({ message: 'authorized' });
 });
 
+app.get('/api/user/:username', (request, response) => {
+  const { username } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      response.status(200).send({
+        message: 'User Found',
+        user,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+// app.get('/api/followedArtists/:username', (request, response) => {
+//   const { username } = request.params;
+//   User.findOne({ username: username })
+//     .then((user) => {
+//       response.status(200).send({
+//         message: 'User Found',
+//         likedPlaylists: user.likedPlaylists,
+//       });
+//     })
+//     .catch((e) => {
+//       response.status(404).send({
+//         message: 'User not found',
+//         e,
+//       });
+//     });
+// });
+
+app.post('/api/unfollowArtist/:username', (request, response) => {
+  const { username } = request.params;
+  const { artist } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { followingArtists: { id: artist.id } } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Artist removed from following artists',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.get('/api/isFollowingArtist/:username/:artistId', (request, response) => {
+  const { username, artistId } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      response.status(200).send({
+        message: 'User Found',
+        isFollowing:
+          user.followingArtists.find((artist) => artist.id === artistId) !==
+          undefined
+            ? true
+            : false,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.post('/api/followArtist/:username', (request, response) => {
+  const { username } = request.params;
+  const { artist } = request.body;
+  console.log(artist);
+  User.findOneAndUpdate(
+    { username: username },
+    { $push: { followingArtists: artist } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Artist added to following artists',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
 app.post('/register', (request, response) => {
   console.log(request.body.password);
   bcrypt
@@ -30,8 +125,17 @@ app.post('/register', (request, response) => {
     .then((hashedPassword) => {
       const user = new User({
         email: request.body.email,
+        username: request.body.username,
         password: hashedPassword,
       });
+      const token = jwt.sign(
+        {
+          userId: user._id,
+          userEmail: user.email,
+        },
+        'RANDOM-TOKEN',
+        { expiresIn: '24h' }
+      );
 
       user
         .save()
@@ -39,6 +143,7 @@ app.post('/register', (request, response) => {
           response.status(201).send({
             message: 'User Created Successfully',
             result,
+            token,
           });
         })
         .catch((error) => {
@@ -59,7 +164,6 @@ app.post('/register', (request, response) => {
 app.post('/login', (request, response) => {
   User.findOne({ email: request.body.email })
 
-    // if email exists
     .then((user) => {
       bcrypt
         .compare(request.body.password, user.password)
@@ -83,7 +187,7 @@ app.post('/login', (request, response) => {
 
           response.status(200).send({
             message: 'Login Successful',
-            email: user.email,
+            username: user.username,
             token,
           });
         })
