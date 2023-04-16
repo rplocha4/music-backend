@@ -20,6 +20,11 @@ const UserSchema = new mongoose.Schema({
     required: false,
     unique: false,
   },
+  likedAlbums: {
+    type: Array,
+    required: false,
+    unique: false,
+  },
   followingArtists: {
     type: Array,
     required: false,

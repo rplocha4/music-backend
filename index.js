@@ -56,12 +56,51 @@ app.get('/api/user/:username', (request, response) => {
 //     });
 // });
 
-app.post('/api/unfollowArtist/:username', (request, response) => {
+app.post('/api/likeAlbum/:username', (request, response) => {
   const { username } = request.params;
-  const { artist } = request.body;
+  const { album } = request.body;
   User.findOneAndUpdate(
     { username: username },
-    { $pull: { followingArtists: { id: artist.id } } }
+    { $push: { likedAlbums: album } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Album added to liked albums',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/unlikeAlbum/:username', (request, response) => {
+  const { username } = request.params;
+  const { albumId } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { likedAlbums: { id: albumId } } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Album removed from liked albums',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.post('/api/unfollowArtist/:username', (request, response) => {
+  const { username } = request.params;
+  const { artistId } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { followingArtists: { id: artistId } } }
   )
     .then((user) => {
       response.status(200).send({
@@ -76,6 +115,25 @@ app.post('/api/unfollowArtist/:username', (request, response) => {
     });
 });
 
+app.get('/api/isAlbumLiked/:username/:albumId', (request, response) => {
+  const { username, albumId } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      response.status(200).send({
+        message: 'User Found',
+        isLiked:
+          user.likedAlbums.find((album) => album.id === albumId) !== undefined
+            ? true
+            : false,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
 app.get('/api/isFollowingArtist/:username/:artistId', (request, response) => {
   const { username, artistId } = request.params;
   User.findOne({ username: username })
@@ -100,7 +158,6 @@ app.get('/api/isFollowingArtist/:username/:artistId', (request, response) => {
 app.post('/api/followArtist/:username', (request, response) => {
   const { username } = request.params;
   const { artist } = request.body;
-  console.log(artist);
   User.findOneAndUpdate(
     { username: username },
     { $push: { followingArtists: artist } }
