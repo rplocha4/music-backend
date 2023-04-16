@@ -55,6 +55,103 @@ app.get('/api/user/:username', (request, response) => {
 //       });
 //     });
 // });
+app.get('/api/getUserPlaylists/:username', (request, response) => {
+  const { username } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      response.status(200).send({
+        message: 'User Found',
+        userPlaylists: user.userPlaylists,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/createPlaylist/:username', (request, response) => {
+  const { username } = request.params;
+  const { playlist } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $push: { userPlaylists: playlist } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Playlist Created',
+        user,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/deletePlaylist/:username', (request, response) => {
+  const { username } = request.params;
+  const { playlistId } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { userPlaylists: { id: playlistId } } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Playlist Deleted',
+        user,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/addTrackToPlaylist/:username', (request, response) => {
+  const { username } = request.params;
+  const { playlistId, track } = request.body;
+  User.findOneAndUpdate(
+    { username: username, 'userPlaylists.id': playlistId },
+    { $push: { 'userPlaylists.$.songs': track } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Song Added',
+        user,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/deleteSongFromPlaylist/:username', (request, response) => {
+  const { username } = request.params;
+  const { playlistId, songId } = request.body;
+  User.findOneAndUpdate(
+    { username: username, 'userPlaylists.id': playlistId },
+    { $pull: { 'userPlaylists.$.songs': { id: songId } } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'Song Deleted',
+        user,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
 app.get('/api/isLikingTrack/:username/:id', (request, response) => {
   const { username, id } = request.params;
   User.findOne({ username: username })

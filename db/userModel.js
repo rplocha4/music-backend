@@ -15,6 +15,17 @@ const UserSchema = new mongoose.Schema({
     required: [true, 'Please provide a password!'],
     unique: false,
   },
+  profilePicture: {
+    type: String,
+    required: false,
+    unique: false,
+  },
+  userPlaylists: {
+    type: Array,
+    required: false,
+    unique: false,
+  },
+
   likedPlaylists: {
     type: Array,
     required: false,
