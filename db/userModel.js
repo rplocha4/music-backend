@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema({
     required: false,
     unique: false,
   },
-  likedSongs: {
+  likedTracks: {
     type: Array,
     required: false,
     unique: false,

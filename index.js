@@ -55,6 +55,83 @@ app.get('/api/user/:username', (request, response) => {
 //       });
 //     });
 // });
+app.get('/api/isLikingTrack/:username/:id', (request, response) => {
+  const { username, id } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      const likedTracks = user.likedTracks;
+      const isLiking = likedTracks.some((track) => track.id === id);
+      response.status(200).send({
+        message: 'User Found',
+        isLiking,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.get('/api/likedTracks/:username', (request, response) => {
+  const { username } = request.params;
+  console.log(username);
+  User.findOne({ username: username })
+    .then((user) => {
+      console.log(user.likedTracks);
+      response.status(200).send({
+        message: 'User Found',
+        likedTracks: user.likedTracks,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/likeTrack/:username', (request, response) => {
+  const { username } = request.params;
+  const { track } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $push: { likedTracks: track } }
+  )
+
+    .then((user) => {
+      response.status(200).send({
+        message: 'Track added to liked tracks',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+app.post('/api/unlikeTrack/:username', (request, response) => {
+  const { username } = request.params;
+  const { trackId } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { likedTracks: { id: trackId } } }
+  )
+
+    .then((user) => {
+      response.status(200).send({
+        message: 'Track removed from liked tracks',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
 
 app.post('/api/likeAlbum/:username', (request, response) => {
   const { username } = request.params;
