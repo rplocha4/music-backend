@@ -71,6 +71,26 @@ app.get('/api/getUserPlaylists/:username', (request, response) => {
       });
     });
 });
+app.get('/api/getPlaylist/:username/:playlistId', (request, response) => {
+  const { username, playlistId } = request.params;
+  User.findOne({ username: username, 'userPlaylists.id': playlistId })
+
+    .then((user) => {
+      const playlist = user.userPlaylists.find(
+        (playlist) => playlist.id === playlistId
+      );
+      response.status(200).send({
+        playlist,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
 app.post('/api/createPlaylist/:username', (request, response) => {
   const { username } = request.params;
   const { playlist } = request.body;
@@ -116,7 +136,19 @@ app.post('/api/addTrackToPlaylist/:username', (request, response) => {
   const { playlistId, track } = request.body;
   User.findOneAndUpdate(
     { username: username, 'userPlaylists.id': playlistId },
-    { $push: { 'userPlaylists.$.songs': track } }
+    {
+      $push: {
+        'userPlaylists.$.tracks.items': {
+          track,
+          added: new Date().toISOString(),
+        },
+      },
+    },
+    {
+      $inc: {
+        'userPlaylists.$.tracks.total': 1,
+      },
+    }
   )
     .then((user) => {
       response.status(200).send({
@@ -125,6 +157,7 @@ app.post('/api/addTrackToPlaylist/:username', (request, response) => {
       });
     })
     .catch((e) => {
+      console.log(e);
       response.status(404).send({
         message: 'User not found',
         e,
@@ -136,7 +169,16 @@ app.post('/api/deleteSongFromPlaylist/:username', (request, response) => {
   const { playlistId, songId } = request.body;
   User.findOneAndUpdate(
     { username: username, 'userPlaylists.id': playlistId },
-    { $pull: { 'userPlaylists.$.songs': { id: songId } } }
+    {
+      $pull: {
+        'userPlaylists.$.songs': { id: songId },
+      },
+    },
+    {
+      $dec: {
+        'userPlaylists.$.tracks.total': 1,
+      },
+    }
   )
     .then((user) => {
       response.status(200).send({
@@ -194,7 +236,7 @@ app.post('/api/likeTrack/:username', (request, response) => {
   const { track } = request.body;
   User.findOneAndUpdate(
     { username: username },
-    { $push: { likedTracks: track } }
+    { $push: { likedTracks: { ...track, date: new Date().toISOString() } } }
   )
 
     .then((user) => {
