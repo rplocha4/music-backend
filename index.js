@@ -152,7 +152,7 @@ app.post('/api/addTrackToPlaylist/:username', (request, response) => {
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Song Added',
+        message: 'Song Added to Playlist',
         user,
       });
     })
@@ -199,7 +199,7 @@ app.get('/api/isLikingTrack/:username/:id', (request, response) => {
   User.findOne({ username: username })
     .then((user) => {
       const likedTracks = user.likedTracks;
-      const isLiking = likedTracks.some((track) => track.id === id);
+      const isLiking = likedTracks.some((item) => item.track.id === id);
       response.status(200).send({
         message: 'User Found',
         isLiking,
@@ -218,7 +218,6 @@ app.get('/api/likedTracks/:username', (request, response) => {
   console.log(username);
   User.findOne({ username: username })
     .then((user) => {
-      console.log(user.likedTracks);
       response.status(200).send({
         message: 'User Found',
         likedTracks: user.likedTracks,
@@ -234,11 +233,13 @@ app.get('/api/likedTracks/:username', (request, response) => {
 app.post('/api/likeTrack/:username', (request, response) => {
   const { username } = request.params;
   const { track } = request.body;
+
   User.findOneAndUpdate(
     { username: username },
-    { $push: { likedTracks: { ...track, date: new Date().toISOString() } } }
+    {
+      $push: { likedTracks: { track: track, added: new Date().toISOString() } },
+    }
   )
-
     .then((user) => {
       response.status(200).send({
         message: 'Track added to liked tracks',
@@ -254,14 +255,18 @@ app.post('/api/likeTrack/:username', (request, response) => {
 app.post('/api/unlikeTrack/:username', (request, response) => {
   const { username } = request.params;
   const { trackId } = request.body;
-  User.findOneAndUpdate(
-    { username: username },
-    { $pull: { likedTracks: { id: trackId } } }
-  )
+  // find track with id and remove it
+  User.findOne({ username: username })
 
     .then((user) => {
+      const updated = user.likedTracks.filter(
+        (item) => item.track.id !== trackId
+      );
+      user.likedTracks = updated;
+      user.save();
       response.status(200).send({
         message: 'Track removed from liked tracks',
+        user,
       });
     })
     .catch((e) => {
@@ -392,7 +397,6 @@ app.post('/api/followArtist/:username', (request, response) => {
 });
 
 app.post('/register', (request, response) => {
-  console.log(request.body.password);
   bcrypt
     .hash(request.body.password, 10)
     .then((hashedPassword) => {
@@ -417,11 +421,12 @@ app.post('/register', (request, response) => {
             message: 'User Created Successfully',
             result,
             token,
+            username: request.body.username,
           });
         })
         .catch((error) => {
           response.status(500).send({
-            message: 'Error creating user',
+            message: 'User already exists',
             error,
           });
         });
@@ -435,7 +440,7 @@ app.post('/register', (request, response) => {
 });
 
 app.post('/login', (request, response) => {
-  User.findOne({ email: request.body.email })
+  User.findOne({ username: request.body.username })
 
     .then((user) => {
       bcrypt
@@ -466,14 +471,14 @@ app.post('/login', (request, response) => {
         })
         .catch((error) => {
           response.status(400).send({
-            message: 'Passwords does not match',
+            message: 'Wrong Password',
             error,
           });
         });
     })
     .catch((e) => {
       response.status(404).send({
-        message: 'Email not found',
+        message: 'User not found',
         e,
       });
     });
