@@ -40,6 +40,22 @@ app.get('/api/user/:username', (request, response) => {
       });
     });
 });
+app.get('/api/searchUser/:q', async (req, res) => {
+  try {
+    const searchTerm = req.params.q;
+    console.log(searchTerm);
+    const regexQuery = new RegExp(searchTerm, 'i');
+
+    const users = await User.find({
+      username: { $regex: regexQuery },
+    });
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
 // app.get('/api/followedArtists/:username', (request, response) => {
 //   const { username } = request.params;
 //   User.findOne({ username: username })
@@ -101,6 +117,52 @@ app.post('/api/createPlaylist/', async (req, res) => {
     console.log(playlist);
 
     res.status(201).json({ message: `Playlist: '${name}' created`, playlist });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+app.delete('/api/playlists/:id', async (req, res) => {
+  try {
+    const playlistId = req.params.id;
+    const deletedPlaylist = await Playlist.findOneAndDelete({
+      _id: playlistId,
+    });
+
+    if (!deletedPlaylist) {
+      return res.status(404).json({ message: 'Playlist not found' });
+    }
+
+    res.status(200).json({ message: 'Playlist deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+app.get('/api/searchPlaylists/:q', async (req, res) => {
+  try {
+    const query = req.params.q;
+
+    if (!query) {
+      return res
+        .status(400)
+        .json({ message: 'Query parameter "q" is required' });
+    }
+
+    const regexQuery = new RegExp(query, 'i');
+
+    const playlists = await Playlist.find({
+      $or: [
+        { name: { $regex: regexQuery } },
+        { description: { $regex: regexQuery } },
+      ],
+    }).exec();
+
+    if (playlists.length === 0) {
+      return res.status(404).json({ message: 'No playlists found' });
+    }
+
+    res.status(200).json(playlists);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
