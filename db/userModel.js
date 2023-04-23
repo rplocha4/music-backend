@@ -20,11 +20,12 @@ const UserSchema = new mongoose.Schema({
     required: false,
     unique: false,
   },
-  userPlaylists: {
-    type: Array,
-    required: false,
-    unique: false,
-  },
+  playlists: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Playlist',
+    },
+  ],
 
   likedPlaylists: {
     type: Array,
@@ -36,6 +37,12 @@ const UserSchema = new mongoose.Schema({
     required: false,
     unique: false,
   },
+  followedPlaylists: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Playlist',
+    },
+  ],
   followingArtists: {
     type: Array,
     required: false,
