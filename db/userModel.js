@@ -18,7 +18,9 @@ const UserSchema = new mongoose.Schema({
   profilePicture: {
     data: Buffer,
     contentType: String,
+    
   },
+
   playlists: [
     {
       type: mongoose.Schema.Types.ObjectId,

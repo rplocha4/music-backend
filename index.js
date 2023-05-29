@@ -70,18 +70,21 @@ app.get('/auth', auth, (request, response) => {
 
 app.get('/api/user/:username', (request, response) => {
   const { username } = request.params;
+
   User.findOne({ username: username })
     .then((user) => {
       response.status(200).send({
         message: 'User Found',
         user,
-
         profilePicture:
-          'data:image/png;base64,' +
-          user.profilePicture.data.toString('base64'),
+          user.profilePicture.data !== undefined
+            ? 'data:image/png;base64,' +
+              user.profilePicture.data?.toString('base64')
+            : null,
       });
     })
     .catch((e) => {
+      console.log(e);
       response.status(404).send({
         message: 'User not found',
         e,
@@ -98,8 +101,8 @@ app.get('/api/searchUser/:q', async (req, res) => {
     });
     newUsers = users.map((user) => {
       const profilePicture =
-        user.profilePicture &&
-        'data:image/png;base64,' + user.profilePicture.data.toString('base64');
+        user.profilePicture.data !== undefined &&
+        'data:image/png;base64,' + user.profilePicture.data?.toString('base64');
       return { user, profilePicture };
     });
     res.status(200).json(newUsers);
@@ -124,6 +127,7 @@ app.get('/api/searchUser/:q', async (req, res) => {
 //       });
 //     });
 // });
+
 app.get('/api/getUserPlaylists/:userId', async (req, res) => {
   try {
     const playlists = await Playlist.find({
@@ -670,6 +674,12 @@ app.post('/login', (request, response) => {
             message: 'Login Successful',
             username: user.username,
             token,
+            profilePicture:
+              user.profilePicture.data !== undefined
+                ? 'data:image/png;base64,' +
+                  user.profilePicture.data?.toString('base64')
+                : null,
+
             _id: user._id,
           });
         })
