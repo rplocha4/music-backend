@@ -16,9 +16,8 @@ const UserSchema = new mongoose.Schema({
     unique: false,
   },
   profilePicture: {
-    type: String,
-    required: false,
-    unique: false,
+    data: Buffer,
+    contentType: String,
   },
   playlists: [
     {

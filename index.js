@@ -9,6 +9,8 @@ const User = require('./db/userModel');
 const Playlist = require('./db/PlaylistModel');
 const jwt = require('jsonwebtoken');
 const auth = require('./auth');
+const fs = require('fs');
+const path = require('path');
 
 const port = 5000;
 
@@ -19,6 +21,48 @@ app.use(bodyParser.json());
 app.use(cors());
 
 connectDB();
+
+var multer = require('multer');
+
+var storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads');
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + '-' + Date.now());
+  },
+});
+
+var upload = multer({ storage: storage });
+
+app.post('/api/upload/:id', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(500).send({ message: 'Upload fail' });
+  } else {
+    //find user by id and update profile picture
+
+    User.findByIdAndUpdate(req.params.id, {
+      profilePicture: {
+        data: fs.readFileSync(
+          path.join(__dirname + '/uploads/' + req.file.filename)
+        ),
+        contentType: 'image/png',
+      },
+    })
+      .then((user) => {
+        res.status(200).send({
+          message: 'Profile picture updated',
+          user,
+        });
+      })
+      .catch((e) => {
+        res.status(404).send({
+          message: 'User not found',
+          e,
+        });
+      });
+  }
+});
 
 app.get('/auth', auth, (request, response) => {
   response.json({ message: 'authorized' });
@@ -31,6 +75,10 @@ app.get('/api/user/:username', (request, response) => {
       response.status(200).send({
         message: 'User Found',
         user,
+
+        profilePicture:
+          'data:image/png;base64,' +
+          user.profilePicture.data.toString('base64'),
       });
     })
     .catch((e) => {
@@ -43,14 +91,18 @@ app.get('/api/user/:username', (request, response) => {
 app.get('/api/searchUser/:q', async (req, res) => {
   try {
     const searchTerm = req.params.q;
-    console.log(searchTerm);
     const regexQuery = new RegExp(searchTerm, 'i');
 
     const users = await User.find({
       username: { $regex: regexQuery },
     });
-
-    res.status(200).json(users);
+    newUsers = users.map((user) => {
+      const profilePicture =
+        user.profilePicture &&
+        'data:image/png;base64,' + user.profilePicture.data.toString('base64');
+      return { user, profilePicture };
+    });
+    res.status(200).json(newUsers);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
@@ -114,7 +166,6 @@ app.post('/api/createPlaylist/', async (req, res) => {
     });
 
     await playlist.save();
-    console.log(playlist);
 
     res.status(201).json({ message: `Playlist: '${name}' created`, playlist });
   } catch (err) {
@@ -212,7 +263,6 @@ app.post('/api/addTrackToPlaylist/:playlistId', async (req, res) => {
   }
 });
 app.get('/api/:userId/playlists/following', async (req, res) => {
-  console.log(req.params.userId);
   try {
     const user = await User.findById(req.params.userId).exec();
 
@@ -223,7 +273,6 @@ app.get('/api/:userId/playlists/following', async (req, res) => {
     const playlistIds = user.followedPlaylists;
 
     const playlists = await Playlist.find({ _id: { $in: playlistIds } }).exec();
-    console.log(playlists);
     res.status(200).json(playlists);
   } catch (err) {
     console.error(err);
@@ -286,8 +335,6 @@ app.get('/api/:userId/playlists/:playlistId/following', async (req, res) => {
   }
 });
 app.put('/api/:userId/playlists/:playlistId/unfollow', async (req, res) => {
-  console.log(req.params.userId);
-  console.log(req.params.playlistId);
   try {
     const user = await User.findById(req.params.userId).exec();
 
@@ -302,7 +349,6 @@ app.put('/api/:userId/playlists/:playlistId/unfollow', async (req, res) => {
     }
 
     const index = user.followedPlaylists.indexOf(playlist._id);
-    console.log(index);
     if (index !== -1) {
       user.followedPlaylists.splice(index, 1);
       await user.save();
@@ -317,7 +363,6 @@ app.put('/api/:userId/playlists/:playlistId/unfollow', async (req, res) => {
   }
 });
 app.post('/api/:userId/playlists/:playlistId/follow', async (req, res) => {
-  console.log('follow');
   try {
     const user = await User.findById(req.params.userId).exec();
 
@@ -667,7 +712,6 @@ app.post('/auth/login', (req, res) => {
 
 app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
-  console.log('asd');
   const spotifyApi = new SpotifyWebApi({
     redirectUri: 'http://localhost:5173',
     clientId: process.env.SPOTIFY_CLIENT_ID,
