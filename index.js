@@ -68,6 +68,68 @@ app.get('/auth', auth, (request, response) => {
   response.json({ message: 'authorized' });
 });
 
+app.post('/api/followUser/:username', (request, response) => {
+  const { username } = request.params;
+  const { user } = request.body;
+  console.log(user);
+  User.findOneAndUpdate(
+    { username: username },
+    { $push: { followingUsers: user } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'User added to following',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.post('/api/unfollowUser/:username', (request, response) => {
+  const { username } = request.params;
+  const { userId } = request.body;
+  User.findOneAndUpdate(
+    { username: username },
+    { $pull: { followingUsers: { id: userId } } }
+  )
+    .then((user) => {
+      response.status(200).send({
+        message: 'User removed from following',
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
+app.get('/api/isFollowingUser/:username/:username2', (request, response) => {
+  const { username, username2 } = request.params;
+  User.findOne({ username: username })
+    .then((user) => {
+      response.status(200).send({
+        message: 'User Found',
+        isFollowing:
+          user.followingUsers.find((user) => user.username === username2) !==
+          undefined
+            ? true
+            : false,
+      });
+    })
+    .catch((e) => {
+      response.status(404).send({
+        message: 'User not found',
+        e,
+      });
+    });
+});
+
 app.get('/api/user/:username', (request, response) => {
   const { username } = request.params;
 
@@ -111,22 +173,6 @@ app.get('/api/searchUser/:q', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
-// app.get('/api/followedArtists/:username', (request, response) => {
-//   const { username } = request.params;
-//   User.findOne({ username: username })
-//     .then((user) => {
-//       response.status(200).send({
-//         message: 'User Found',
-//         likedPlaylists: user.likedPlaylists,
-//       });
-//     })
-//     .catch((e) => {
-//       response.status(404).send({
-//         message: 'User not found',
-//         e,
-//       });
-//     });
-// });
 
 app.get('/api/getUserPlaylists/:userId', async (req, res) => {
   try {
