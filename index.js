@@ -76,10 +76,22 @@ app.post('/api/followUser/:username', (request, response) => {
     { username: username },
     { $push: { followingUsers: user } }
   )
-    .then((user) => {
-      response.status(200).send({
-        message: 'User added to following',
-      });
+    .then(() => {
+      User.findOneAndUpdate(
+        { username: user.username },
+        { $push: { followers: { username: username } } }
+      )
+        .then((user) => {
+          response.status(200).send({
+            message: `Followed ${user.username}`,
+          });
+        })
+        .catch((e) => {
+          response.status(404).send({
+            message: 'User not found',
+            e,
+          });
+        });
     })
     .catch((e) => {
       response.status(404).send({
@@ -91,15 +103,27 @@ app.post('/api/followUser/:username', (request, response) => {
 
 app.post('/api/unfollowUser/:username', (request, response) => {
   const { username } = request.params;
-  const { userId } = request.body;
+  const { user } = request.body;
   User.findOneAndUpdate(
     { username: username },
-    { $pull: { followingUsers: { id: userId } } }
+    { $pull: { followingUsers: { id: user.id } } }
   )
-    .then((user) => {
-      response.status(200).send({
-        message: 'User removed from following',
-      });
+    .then(() => {
+      User.findOneAndUpdate(
+        { username: user.username },
+        { $pull: { followers: { username: username } } }
+      )
+        .then((user) => {
+          response.status(200).send({
+            message: `Unfollowed ${user.username}`,
+          });
+        })
+        .catch((e) => {
+          response.status(404).send({
+            message: 'User not found',
+            e,
+          });
+        });
     })
     .catch((e) => {
       response.status(404).send({
@@ -108,6 +132,12 @@ app.post('/api/unfollowUser/:username', (request, response) => {
       });
     });
 });
+
+// app.get('/api/followers/:username', (request, response) => {
+//   const { username } = request.params;
+//   // get number of followers from followingUsers array
+
+// });
 
 app.get('/api/isFollowingUser/:username/:username2', (request, response) => {
   const { username, username2 } = request.params;
@@ -494,7 +524,7 @@ app.post('/api/likeTrack/:username', (request, response) => {
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Track added to liked tracks',
+        message: `Liked ${track.name} by ${track.artists[0].name}`,
       });
     })
     .catch((e) => {
@@ -506,18 +536,18 @@ app.post('/api/likeTrack/:username', (request, response) => {
 });
 app.post('/api/unlikeTrack/:username', (request, response) => {
   const { username } = request.params;
-  const { trackId } = request.body;
+  const { track } = request.body;
   // find track with id and remove it
   User.findOne({ username: username })
 
     .then((user) => {
       const updated = user.likedTracks.filter(
-        (item) => item.track.id !== trackId
+        (item) => item.track.id !== track.id
       );
       user.likedTracks = updated;
       user.save();
       response.status(200).send({
-        message: 'Track removed from liked tracks',
+        message: `Unliked ${track.name} by ${track.artists[0].name}`,
         user,
       });
     })
@@ -538,7 +568,7 @@ app.post('/api/likeAlbum/:username', (request, response) => {
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Album added to liked albums',
+        message: `Liked ${album.name}`,
       });
     })
     .catch((e) => {
@@ -550,14 +580,14 @@ app.post('/api/likeAlbum/:username', (request, response) => {
 });
 app.post('/api/unlikeAlbum/:username', (request, response) => {
   const { username } = request.params;
-  const { albumId } = request.body;
+  const { album } = request.body;
   User.findOneAndUpdate(
     { username: username },
-    { $pull: { likedAlbums: { id: albumId } } }
+    { $pull: { likedAlbums: { id: album.id } } }
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Album removed from liked albums',
+        message: `Unliked ${album.name}`,
       });
     })
     .catch((e) => {
@@ -570,14 +600,14 @@ app.post('/api/unlikeAlbum/:username', (request, response) => {
 
 app.post('/api/unfollowArtist/:username', (request, response) => {
   const { username } = request.params;
-  const { artistId } = request.body;
+  const { artist } = request.body;
   User.findOneAndUpdate(
     { username: username },
-    { $pull: { followingArtists: { id: artistId } } }
+    { $pull: { followingArtists: { id: artist.id } } }
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Artist removed from following artists',
+        message: `Unfollowed ${artist.name}`,
       });
     })
     .catch((e) => {
@@ -637,7 +667,7 @@ app.post('/api/followArtist/:username', (request, response) => {
   )
     .then((user) => {
       response.status(200).send({
-        message: 'Artist added to following artists',
+        message: `Followed ${artist.name}`,
       });
     })
     .catch((e) => {
@@ -747,7 +777,7 @@ app.post('/login', (request, response) => {
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-oq29.onrender.com',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
@@ -769,7 +799,7 @@ app.post('/auth/login', (req, res) => {
 app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-oq29.onrender.com',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     refreshToken,

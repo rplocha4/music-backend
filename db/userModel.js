@@ -18,7 +18,6 @@ const UserSchema = new mongoose.Schema({
   profilePicture: {
     data: Buffer,
     contentType: String,
-    
   },
 
   playlists: [
@@ -50,6 +49,11 @@ const UserSchema = new mongoose.Schema({
     unique: false,
   },
   followingUsers: {
+    type: Array,
+    required: false,
+    unique: false,
+  },
+  followers: {
     type: Array,
     required: false,
     unique: false,
