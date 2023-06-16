@@ -776,6 +776,7 @@ app.post('/login', (request, response) => {
 
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
+  console.log(code);
   const spotifyApi = new SpotifyWebApi({
     redirectUri: 'https://music-app-rplocha4.vercel.app',
     clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -791,7 +792,8 @@ app.post('/auth/login', (req, res) => {
         expiresIn: data.body.expires_in,
       });
     })
-    .catch(() => {
+    .catch((err) => {
+      console.log(err);
       res.sendStatus(400);
     });
 });
