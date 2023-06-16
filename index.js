@@ -679,6 +679,7 @@ app.post('/api/followArtist/:username', (request, response) => {
 });
 
 app.post('/register', (request, response) => {
+  console.log(request.body);
   bcrypt
     .hash(request.body.password, 10)
     .then((hashedPassword) => {
@@ -708,6 +709,7 @@ app.post('/register', (request, response) => {
           });
         })
         .catch((error) => {
+          console.log(error);
           response.status(500).send({
             message: 'User already exists',
             error,
@@ -776,9 +778,8 @@ app.post('/login', (request, response) => {
 
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
-  console.log(code);
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'https://music-app-rplocha4.vercel.app',
+    redirectUri: 'https://music-app-rplocha4.vercel.app/',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
@@ -801,7 +802,7 @@ app.post('/auth/login', (req, res) => {
 app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'https://music-app-rplocha4.vercel.app',
+    redirectUri: 'https://music-app-rplocha4.vercel.app/',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     refreshToken,
