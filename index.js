@@ -12,7 +12,7 @@ const auth = require('./auth');
 const fs = require('fs');
 const path = require('path');
 
-const port = 5000;
+const port = process.env.PORT;
 
 dotenv.config();
 const app = express();
@@ -71,7 +71,7 @@ app.get('/auth', auth, (request, response) => {
 app.post('/api/followUser/:username', (request, response) => {
   const { username } = request.params;
   const { user } = request.body;
-  console.log(user);
+  // console.log(user);
   User.findOneAndUpdate(
     { username: username },
     { $push: { followingUsers: user } }
@@ -176,7 +176,7 @@ app.get('/api/user/:username', (request, response) => {
       });
     })
     .catch((e) => {
-      console.log(e);
+      // console.log(e);
       response.status(404).send({
         message: 'User not found',
         e,
@@ -777,7 +777,7 @@ app.post('/login', (request, response) => {
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'https://music-app-oq29.onrender.com',
+    redirectUri: 'http://localhost:5173',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
@@ -799,7 +799,7 @@ app.post('/auth/login', (req, res) => {
 app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'https://music-app-oq29.onrender.com',
+    redirectUri: 'http://localhost:5173',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     refreshToken,
