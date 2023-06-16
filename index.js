@@ -777,7 +777,7 @@ app.post('/login', (request, response) => {
 app.post('/auth/login', (req, res) => {
   const code = req.body.code;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-rplocha4.vercel.app/',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
@@ -799,7 +799,7 @@ app.post('/auth/login', (req, res) => {
 app.post('/auth/refresh', (req, res) => {
   const refreshToken = req.body.refreshToken;
   const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:5173',
+    redirectUri: 'https://music-app-rplocha4.vercel.app/',
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     refreshToken,
